@@ -42,6 +42,8 @@
 #include <taglib/mpegfile.h>
 #include <taglib/attachedpictureframe.h>
 #include <taglib/textidentificationframe.h>
+#include <taglib/apefile.h>
+#include <taglib/apetag.h>
 
 #include "taglib_handler.h"
 #include "string_converter.h"
@@ -182,6 +184,25 @@ void TagHandler::fillMetadata(Ref<CdsItem> item)
     Ref<Dictionary> mappings = ConfigManager::getInstance()->getDictionaryOption(CFG_IMPORT_MAPPINGS_MIMETYPE_TO_CONTENTTYPE_LIST);
     String content_type = mappings->get(item->getMimeType());
     // we are done here, album art can only be retrieved from id3v2
+
+    if (item->getMimeType() == "audio/flac" ||
+        item->getMimeType() == "audio/musepack" ||
+        item->getMimeType() == "audio/vorbis") {
+        // handle ape tags
+        TagLib::APE::File mp(item->getLocation().c_str());
+        if (mp.isValid()) {
+            Ref<ConfigManager> cm = ConfigManager::getInstance();
+            aux = cm->getStringArrayOption(CFG_IMPORT_LIBOPTS_ID3_AUXDATA_TAGS_LIST);
+            for (int j = 0 ; j < aux->size(); j++) {
+                String desiredFrame = aux->get(j);
+                if (string_ok(desiredFrame)) {
+                    const char *val = (mp.APETag()->itemListMap())[TagLib::String(desiredFrame.c_str())].toString().toCString();
+                    item->setAuxData(desiredFrame, val);
+                }
+            }
+        }
+    }
+
     if (content_type != CONTENT_TYPE_MP3)
         return;
 
