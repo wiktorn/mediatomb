@@ -29,10 +29,6 @@
 
 /// \file config_manager.cc
 
-#ifdef HAVE_CONFIG_H
-    #include "autoconfig.h"
-#endif
-
 #include <stdio.h>
 #include "uuid/uuid.h"
 #include "common.h"
@@ -1354,7 +1350,12 @@ void ConfigManager::validate(String serverhome)
         mime_content->put(_("audio/x-mpegurl"), _(CONTENT_TYPE_PLAYLIST));
         mime_content->put(_("audio/x-scpls"), _(CONTENT_TYPE_PLAYLIST));
         mime_content->put(_("audio/x-wav"), _(CONTENT_TYPE_PCM));
+        mime_content->put(_("audio/wave"), _(CONTENT_TYPE_PCM));
+        mime_content->put(_("audio/wav"), _(CONTENT_TYPE_PCM));
+        mime_content->put(_("audio/vnd.wave"), _(CONTENT_TYPE_PCM));
         mime_content->put(_("audio/L16"), _(CONTENT_TYPE_PCM));
+        mime_content->put(_("audio/x-aiff"), _(CONTENT_TYPE_AIFF));
+        mime_content->put(_("audio/aiff"), _(CONTENT_TYPE_AIFF));
         mime_content->put(_("video/x-msvideo"), _(CONTENT_TYPE_AVI));
         mime_content->put(_("video/mpeg"), _(CONTENT_TYPE_MPEG));
         mime_content->put(_("application/x-iso9660"), _(CONTENT_TYPE_DVD));
@@ -3166,18 +3167,31 @@ Ref<Array<StringBase> > ConfigManager::createArrayFromNodeset(Ref<mxml::Element>
 String ConfigManager::getOption(config_option_t option)
 {
     Ref<ConfigOption> r = options->get(option);
-    assert(r.getPtr() != NULL);
+    if (r.getPtr() == NULL)
+    {
+        throw _Exception(_("option not set"));
+    }
     return r->getOption();
 }
 
 int ConfigManager::getIntOption(config_option_t option)
 {
-    return options->get(option)->getIntOption();
+    Ref<ConfigOption> o = options->get(option);
+    if (o.getPtr() == NULL)
+    {
+        throw _Exception(_("option not set"));
+    }
+    return o->getIntOption();
 }
 
 bool ConfigManager::getBoolOption(config_option_t option)
 {
-    return options->get(option)->getBoolOption();
+    Ref<ConfigOption> o = options->get(option);
+    if (o.getPtr() == NULL)
+    {
+        throw _Exception(_("option not set"));
+    }
+    return o->getBoolOption();
 }
 
 Ref<Dictionary> ConfigManager::getDictionaryOption(config_option_t option)

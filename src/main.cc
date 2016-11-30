@@ -34,10 +34,6 @@
 /// This documentation was generated using doxygen, you can reproduce it by 
 /// running "doxygen doxygen.conf" from the mediatomb/doc/ directory.
 
-#ifdef HAVE_CONFIG_H
-    #include "autoconfig.h"
-#endif
-
 #include "common.h"
 #include "singleton.h"
 #include "server.h"
@@ -554,7 +550,7 @@ For more information visit " DESC_MANUFACTURER_URL "\n\n");
         {
             log_error("Could not bind to socket.\n");
             log_info("Please check if another instance of MediaTomb or\n");
-            log_info("another application is running on the same port.\n");
+            log_info("another application is running on port %d.\n", port);
         }
         else if (upnp_e.getErrorCode() == UPNP_E_SOCKET_ERROR)
         {

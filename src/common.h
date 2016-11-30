@@ -96,9 +96,6 @@
 #define YES                             "yes"
 #define NO                              "no"
 
-#define TRUE                            "1"
-#define FALSE                           "0"
-
 // URL FORMATTING CONSTANTS
 #define URL_OBJECT_ID                   "object_id"
 #define URL_REQUEST_TYPE                "req_type"

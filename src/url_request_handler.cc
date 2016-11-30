@@ -29,10 +29,6 @@
 
 /// \file url_request_handler.cc
 
-#ifdef HAVE_CONFIG_H
-    #include "autoconfig.h"
-#endif
-
 #ifdef HAVE_CURL
 
 #include <upnp/ixml.h>
@@ -63,7 +59,7 @@ URLRequestHandler::URLRequestHandler() : RequestHandler()
 {
 }
 
-void URLRequestHandler::get_info(IN const char *filename, OUT struct File_Info *info)
+void URLRequestHandler::get_info(IN const char *filename, OUT UpnpFileInfo *info)
 {
     log_debug("start\n");
         
@@ -117,7 +113,7 @@ void URLRequestHandler::get_info(IN const char *filename, OUT struct File_Info *
                                "matching the name ") + tr_profile + " found");
 
         mimeType = tp->getTargetMimeType();
-        info->file_length = -1;
+        UpnpFileInfo_set_FileLength(info, -1);
     }
     else
 #endif
@@ -144,31 +140,29 @@ void URLRequestHandler::get_info(IN const char *filename, OUT struct File_Info *
         try
         { 
             st = u->getInfo(url);
-            info->file_length = st->getSize();
+            UpnpFileInfo_set_FileLength(info, st->getSize());
             header = _("Accept-Ranges: bytes");
             log_debug("URL used for request: %s\n", st->getURL().c_str());
         }
         catch (Exception ex)
         {
             log_warning("%s\n", ex.getMessage().c_str());
-            info->file_length = -1;
+            UpnpFileInfo_set_FileLength(info, -1);
         }
 
         mimeType = item->getMimeType();
     }
 
-    info->is_readable = 1;
-    info->last_modified = 0;
-    info->is_directory = 0;
+    UpnpFileInfo_set_IsReadable(info, 1);
+    UpnpFileInfo_set_LastModified(info, 0);
+    UpnpFileInfo_set_IsDirectory(info, 0);
 
-    /* FIXME headers
-    if (string_ok(header))
-        info->http_header = ixmlCloneDOMString(header.c_str());
-    else
-        info->http_header = NULL;
-    */
+    if (string_ok(header)) {
+        UpnpFileInfo_set_ExtraHeaders(info,
+                                      ixmlCloneDOMString(header.c_str()));
+    }
 
-    info->content_type = ixmlCloneDOMString(mimeType.c_str());
+    UpnpFileInfo_set_ContentType(info, ixmlCloneDOMString(mimeType.c_str()));
     log_debug("web_get_info(): end\n");
 
     /// \todo transcoding for get_info

@@ -29,25 +29,21 @@
 
 /// \file action_request.cc
 
-#ifdef HAVE_CONFIG_H
-    #include "autoconfig.h"
-#endif
-
 #include "action_request.h"
 
 using namespace zmm;
 using namespace mxml;
 
-ActionRequest::ActionRequest(Upnp_Action_Request *upnp_request) : Object()
+ActionRequest::ActionRequest(UpnpActionRequest *upnp_request) : Object()
 {
     this->upnp_request = upnp_request;
 
     errCode = UPNP_E_SUCCESS;
-    actionName = upnp_request->ActionName;
-    UDN = upnp_request->DevUDN;
-    serviceID = upnp_request->ServiceID;
+    actionName = UpnpActionRequest_get_ActionName_cstr(upnp_request);
+    UDN = UpnpActionRequest_get_DevUDN_cstr(upnp_request);
+    serviceID = UpnpActionRequest_get_ServiceID_cstr(upnp_request);
 
-    DOMString cxml = ixmlPrintDocument(upnp_request->ActionRequest);
+    DOMString cxml = ixmlPrintDocument(UpnpActionRequest_get_ActionRequest(upnp_request));
     String xml = cxml;
     ixmlFreeDOMString(cxml);
    
@@ -89,19 +85,23 @@ void ActionRequest::update()
         String xml = response->print();
         int ret;
 
-        //log_debug("ActionRequest::update(): \n%s\n\n", xml.c_str());
-        
-        ret = ixmlParseBufferEx(xml.c_str(), &upnp_request->ActionResult);
+        log_debug("ActionRequest::update(): \n%s\n\n", xml.c_str());
+
+        IXML_Document *result = ixmlDocument_createDocument();
+        ret = ixmlParseBufferEx(xml.c_str(), &result);
+
         if (ret != IXML_SUCCESS)
         {
             log_error("ActionRequest::update(): could not convert to iXML\n");
             log_debug("Dump:\n%s\n", xml.c_str());
-            upnp_request->ErrCode = UPNP_E_ACTION_FAILED;    
+
+            UpnpActionRequest_set_ErrCode(upnp_request, UPNP_E_ACTION_FAILED);
         } 
         else
         {
-//            log_debug("ActionRequest::update(): converted to iXML, code %d\n", errCode);
-            upnp_request->ErrCode = errCode;    
+            log_debug("ActionRequest::update(): converted to iXML, code %d\n", errCode);
+            UpnpActionRequest_set_ActionResult(upnp_request, result);
+            UpnpActionRequest_set_ErrCode(upnp_request, errCode);
         }
     }
     else
@@ -111,8 +111,8 @@ void ActionRequest::update()
         // then we keep it
         // if it did not do so - we set an error code of our own
         if (errCode == UPNP_E_SUCCESS) 
-        {   
-            upnp_request->ErrCode = UPNP_E_ACTION_FAILED;
+        {
+            UpnpActionRequest_set_ErrCode(upnp_request, UPNP_E_ACTION_FAILED);
         }
         
         log_error("ActionRequest::update(): response is nil, code %d\n", errCode);

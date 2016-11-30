@@ -29,10 +29,6 @@
 
 /// \file upnp_xml.cc
 
-#ifdef HAVE_CONFIG_H
-    #include "autoconfig.h"
-#endif
-
 #include "upnp_xml.h"
 #include "server.h"
 #include "cds_resource_manager.h"
@@ -110,8 +106,7 @@ Ref<Element> UpnpXML_DIDLRenderObject(Ref<CdsObject> obj, bool renderActions, in
                 result->appendTextChild(key, el->getValue());
         }
         
-//        log_debug("ITEM HAS FOLLOWING METADATA: %s\n", item->getMetadata()->encode().c_str());
-        
+        log_debug("ITEM HAS FOLLOWING METADATA: %s\n", item->getMetadata()->encode().c_str());
         
         CdsResourceManager::addResources(item, result);
         
@@ -125,6 +120,29 @@ Ref<Element> UpnpXML_DIDLRenderObject(Ref<CdsObject> obj, bool renderActions, in
         int childCount = cont->getChildCount();
         if (childCount >= 0)
             result->setAttribute(_("childCount"), String::from(childCount));
+
+        String upnp_class = obj->getClass();
+        log_debug("container is class: %s\n", upnp_class.c_str());
+        if (upnp_class == UPNP_DEFAULT_CLASS_MUSIC_ALBUM) {
+            Ref<Dictionary> meta = obj->getMetadata();
+            Ref<Array<DictionaryElement> > elements = meta->getElements();
+            int len = elements->size();
+            String key;
+
+            log_debug("Album as %d metadata\n", len);
+
+            for (int i = 0; i < len; i++)
+            {
+                Ref<DictionaryElement> el = elements->get(i);
+                key = el->getKey();
+                log_debug("Container %s\n", key.c_str());
+                if (key == MetadataHandler::getMetaFieldName(M_ARTIST)) {
+                    result->appendElementChild(UpnpXML_DIDLRenderCreator(el->getValue()));
+                }
+            }
+
+
+        }
         
     }
     
@@ -397,4 +415,12 @@ Ref<Element> UpnpXML_DIDLRenderCaptionInfo(String URL) {
     cap->setAttribute(_("sec:type"), _("srt"));
 
     return cap;
+}
+
+Ref<Element> UpnpXML_DIDLRenderCreator(String creator) {
+    Ref<Element> out(new Element(_("dc:creator")));
+
+    out->setText(creator);
+
+    return out;
 }
